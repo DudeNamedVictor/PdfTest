@@ -13,8 +13,6 @@ import com.google.zxing.EncodeHintType
 import com.google.zxing.LuminanceSource
 import com.google.zxing.MultiFormatReader
 import com.google.zxing.RGBLuminanceSource
-import com.google.zxing.Reader
-import com.google.zxing.Result
 import com.google.zxing.common.BitMatrix
 import com.google.zxing.common.HybridBinarizer
 import com.google.zxing.datamatrix.DataMatrixWriter
@@ -35,15 +33,14 @@ object GeneratePdfLogic {
     private fun pdfToBitmap(pdfFile: File): List<Bitmap> {
         val bitmaps = mutableListOf<Bitmap>()
         try {
-            val renderer =
-                PdfRenderer(ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY))
+            val renderer = PdfRenderer(ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY))
             var bitmap: Bitmap
             val pageCount = renderer.getPageCount()
             for (i in 0 until pageCount) {
                 val page = renderer.openPage(i)
-                val width = 240 / 72 * page.width
-                val height = 240 / 72 * page.height
-                bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+
+                // понять какое минимальное разрешение нужно для создания битмапы для считывания. Если убрать умножение на 2, то будет краш
+                bitmap = Bitmap.createBitmap(2 * page.width, 2 * page.height, Bitmap.Config.ARGB_8888)
                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                 bitmaps.add(bitmap)
                 page.close()
@@ -56,15 +53,8 @@ object GeneratePdfLogic {
         return bitmaps
     }
 
-    private fun readQrs(listBitmaps: List<Bitmap>): MutableList<String> {
-        val resultQrs = mutableListOf<String>()
-        listBitmaps.forEach { bitmap ->
-            val reader: Reader = MultiFormatReader()
-            val result: Result = reader.decode(bitmapToBinaryBitmap(bitmap))
-            resultQrs.add(result.text)
-        }
-
-        return resultQrs
+    private fun readQrs(listBitmaps: List<Bitmap>) = listBitmaps.map { bitmap ->
+        MultiFormatReader().decode(bitmapToBinaryBitmap(bitmap)).text
     }
 
     private fun bitmapToBinaryBitmap(bitmap: Bitmap): BinaryBitmap {
@@ -78,60 +68,61 @@ object GeneratePdfLogic {
             bitmap.getWidth(),
             bitmap.getHeight()
         )
-        val source: LuminanceSource =
-            RGBLuminanceSource(bitmap.getWidth(), bitmap.getHeight(), intArray)
+        val source: LuminanceSource = RGBLuminanceSource(bitmap.getWidth(), bitmap.getHeight(), intArray)
 
         return BinaryBitmap(HybridBinarizer(source))
     }
 
-    private fun generatePdf(value: String, resultQrs: MutableList<String>): File {
-        val width = 164
-        val height = 113
+    private fun generatePdf(textValue: String, resultQrs: List<String>): File {
         val pdfDocument = PdfDocument()
-        val paint = Paint()
-        val title = Paint()
-        val page = Paint()
+        val dataMatrix = Paint()
+        val outputText = Paint()
+        val pageCount = Paint()
 
         resultQrs.forEachIndexed { index, iterator ->
-            val mypageInfo = PdfDocument.PageInfo.Builder(width, height, 1).create()
-            val myPage = pdfDocument.startPage(mypageInfo)
+            val pageInfo = PdfDocument.PageInfo.Builder(
+                PageParameters.PAGE_SIZE_FOR_NIKITA.width,
+                PageParameters.PAGE_SIZE_FOR_NIKITA.height,
+                1
+            ).create()
+            val myPage = pdfDocument.startPage(pageInfo)
             val canvas: Canvas = myPage.canvas
 
             val hintMap = mutableMapOf<EncodeHintType, SymbolShapeHint>()
             hintMap[EncodeHintType.DATA_MATRIX_SHAPE] = SymbolShapeHint.FORCE_SQUARE
             val bitMatrix =
                 DataMatrixWriter().encode(iterator, BarcodeFormat.DATA_MATRIX, 30, 30, hintMap)
-            canvas.drawBitmap(convertBitMatrixToBitMap(bitMatrix), 6F, 6F, paint)
+            canvas.drawBitmap(convertBitMatrixToBitMap(bitMatrix), 15F, 15F, dataMatrix)
 
-            title.setColor(Color.BLACK)
-            title.textSize = 8F
-            title.textAlign = Paint.Align.CENTER
+            outputText.setColor(Color.BLACK)
+            outputText.textSize = 8F
+            outputText.textAlign = Paint.Align.CENTER
 
             val text = mutableListOf<String>()
-            var test = ""
-            value.forEachIndexed { index, char ->
-                test += char
-                if (index != 0 && index.mod(20) == 0) {
-                    text.add(test)
-                    test = ""
+            var textChars = ""
+            for(i in textValue.indices) {
+                textChars += textValue[i]
+                if (i != 0 && i.mod(20) == 0) {
+                    text.add(textChars)
+                    textChars = ""
                 }
-                if (index == value.length - 1) {
-                    text.add(test)
-                    test = ""
+                if (i == textValue.length - 1) {
+                    text.add(textChars)
+                    textChars = ""
                 }
-                if (index > 80) {
-                    return@forEachIndexed
+                if (i > 80) {
+                    break
                 }
             }
 
-            text.forEachIndexed { index, it ->
-                canvas.drawText(it, 110F, 30F + ((index + 1) * 10), title)
+            text.forEachIndexed { i, it ->
+                canvas.drawText(it, 110F, 30F + ((i + 1) * 10), outputText)
             }
 
-            page.setColor(Color.BLACK)
-            page.textSize = 6F
-            page.textAlign = Paint.Align.RIGHT
-            canvas.drawText((index + 1).toString(), 154F, 107F, page)
+            pageCount.setColor(Color.BLACK)
+            pageCount.textSize = 5F
+            pageCount.textAlign = Paint.Align.RIGHT
+            canvas.drawText((index + 1).toString(), 154F, 107F, pageCount)
             pdfDocument.finishPage(myPage)
         }
 
@@ -143,16 +134,18 @@ object GeneratePdfLogic {
     }
 
     private fun convertBitMatrixToBitMap(bitMatrix: BitMatrix): Bitmap {
-        val height = bitMatrix.height
-        val width = bitMatrix.width
-        val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
-        for (x in 0 until width) {
-            for (y in 0 until height) {
+        val bmp = Bitmap.createBitmap(bitMatrix.width, bitMatrix.height, Bitmap.Config.ARGB_8888)
+        for (x in 0 until bitMatrix.width) {
+            for (y in 0 until bitMatrix.height) {
                 bmp.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
             }
         }
 
         return bmp
+    }
+
+    private enum class PageParameters(val width: Int, val height: Int) {
+        PAGE_SIZE_FOR_NIKITA(165, 115)
     }
 
 }

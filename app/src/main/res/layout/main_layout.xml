@@ -1,32 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_gravity="center"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
-    <EditText
-        android:id="@+id/inputValue"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="60dp" />
-
-    <Button
-        android:id="@+id/selectFile"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="Select a file" />
-
-    <Button
-        android:id="@+id/generateFile"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="Generate .pdf" />
-
-    <ProgressBar
-        android:id="@+id/progress"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
+        android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:visibility="invisible" />
+        android:layout_margin="15dp"
+        android:orientation="vertical">
 
-</LinearLayout>
+        <EditText
+            android:id="@+id/inputValue"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:inputType="text" />
+
+        <Button
+            android:id="@+id/selectFile"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="@string/select_a_file" />
+
+        <Button
+            android:id="@+id/generateFile"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="@string/generate_pdf" />
+
+        <ProgressBar
+            android:id="@+id/progress"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="center"
+            android:visibility="invisible"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+
+</FrameLayout>
