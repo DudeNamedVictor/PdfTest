@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
                     makeText("Ready")
                 }
             } else {
-                makeText("empty value or list")
+                makeText("Empty value or list")
             }
         }
     }

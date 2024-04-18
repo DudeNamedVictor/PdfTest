@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">PdfTest</string>
+    <string name="select_a_file">Select a file</string>
+    <string name="generate_pdf">Generate pdf-file</string>
 </resources>
