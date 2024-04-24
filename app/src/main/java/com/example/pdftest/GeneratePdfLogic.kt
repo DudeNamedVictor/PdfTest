@@ -38,9 +38,7 @@ object GeneratePdfLogic {
             val pageCount = renderer.getPageCount()
             for (i in 0 until pageCount) {
                 val page = renderer.openPage(i)
-
-                // понять какое минимальное разрешение нужно для создания битмапы для считывания. Если убрать умножение на 2, то будет краш
-                bitmap = Bitmap.createBitmap(2 * page.width, 2 * page.height, Bitmap.Config.ARGB_8888)
+                bitmap = Bitmap.createBitmap(3 * page.width, 3 * page.height, Bitmap.Config.ARGB_8888)
                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                 bitmaps.add(bitmap)
                 page.close()
@@ -91,38 +89,36 @@ object GeneratePdfLogic {
             val hintMap = mutableMapOf<EncodeHintType, SymbolShapeHint>()
             hintMap[EncodeHintType.DATA_MATRIX_SHAPE] = SymbolShapeHint.FORCE_SQUARE
             val bitMatrix =
-                DataMatrixWriter().encode(iterator, BarcodeFormat.DATA_MATRIX, 30, 30, hintMap)
+                DataMatrixWriter().encode(iterator, BarcodeFormat.DATA_MATRIX, 100, 100, hintMap)
             canvas.drawBitmap(convertBitMatrixToBitMap(bitMatrix), 15F, 15F, dataMatrix)
 
             outputText.setColor(Color.BLACK)
-            outputText.textSize = 8F
+            outputText.textSize = 14F
             outputText.textAlign = Paint.Align.CENTER
 
-            val text = mutableListOf<String>()
-            var textChars = ""
-            for(i in textValue.indices) {
-                textChars += textValue[i]
-                if (i != 0 && i.mod(20) == 0) {
-                    text.add(textChars)
-                    textChars = ""
+            val textList = textValue.split(" ").toList()
+            var string = ""
+            var step = 80F
+            for (i in textList.indices) {
+                if (string.length < 20) {
+                    string += textList[i] + " "
+                } else {
+                    canvas.drawText(string, 200F, step, outputText)
+                    string = textList[i] + " "
+                    step += 20F
                 }
-                if (i == textValue.length - 1) {
-                    text.add(textChars)
-                    textChars = ""
+                if (i == textList.size - 1 && string.isNotEmpty()) {
+                    canvas.drawText(string, 200F, step, outputText)
                 }
-                if (i > 80) {
+                if (i > 14) {
                     break
                 }
             }
 
-            text.forEachIndexed { i, it ->
-                canvas.drawText(it, 110F, 30F + ((i + 1) * 10), outputText)
-            }
-
             pageCount.setColor(Color.BLACK)
-            pageCount.textSize = 5F
+            pageCount.textSize = 9F
             pageCount.textAlign = Paint.Align.RIGHT
-            canvas.drawText((index + 1).toString(), 154F, 107F, pageCount)
+            canvas.drawText((index + 1).toString(), 300F, 210F, pageCount)
             pdfDocument.finishPage(myPage)
         }
 
@@ -145,7 +141,7 @@ object GeneratePdfLogic {
     }
 
     private enum class PageParameters(val width: Int, val height: Int) {
-        PAGE_SIZE_FOR_NIKITA(165, 115)
+        PAGE_SIZE_FOR_NIKITA(320, 230)
     }
 
 }
