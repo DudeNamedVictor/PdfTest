@@ -11,23 +11,23 @@
         android:layout_margin="15dp"
         android:orientation="vertical">
 
-        <EditText
-            android:id="@+id/inputValue"
+        <Button
+            android:id="@+id/selectFirstFile"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:inputType="text" />
+            android:text="@string/select_first_file" />
 
         <Button
-            android:id="@+id/selectFile"
+            android:id="@+id/selectSecondFile"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:text="@string/select_a_file" />
+            android:text="@string/select_second_file" />
 
         <Button
-            android:id="@+id/generateFile"
+            android:id="@+id/comparePdfs"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:text="@string/generate_pdf" />
+            android:text="@string/compare_pdfs" />
 
         <ProgressBar
             android:id="@+id/progress"
